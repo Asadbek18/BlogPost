@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BlogPost.Data;
 using BlogPost.Models;
+using System.Security.Claims;
 
 namespace BlogPost.Controllers
 {
@@ -22,7 +23,12 @@ namespace BlogPost.Controllers
         // GET: AddPosts
         public async Task<IActionResult> Index()
         {
-              return View(await _context.addpost.ToListAsync());
+            return View(await _context.addpost.OrderByDescending(p => p.CreatedDate).Take(8).ToListAsync());
+            ////  var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //  var UserPost = _context.addpost.OrderByDescending(p => p.CreatedDate).Take(8);
+            //  var UserPost_2 = UserPost.Where(p => p.Id == curUserId);
+            //  return View(await UserPost_2.ToListAsync());
         }
 
         // GET: AddPosts/Details/5
