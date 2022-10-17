@@ -23,8 +23,11 @@ namespace BlogPost.Areas.User.Controllers
         // GET: AddPosts
         public async Task<IActionResult> Index()
         {
-            var curUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return View(_context.addpost.Where(p => p.AuthorId == curUserId));
+            var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var UserPost = _context.addpost.OrderByDescending(p => p.CreatedDate).Take(8);
+            var UserPost_2 = UserPost.Where(p => p.AuthorId == curUserId);
+            return View(await UserPost_2.ToListAsync());
         }
 
         // GET: AddPosts/Details/5
