@@ -1,20 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using BlogPost.Data;
+﻿using BlogPost.Data;
 using BlogPost.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Security.Claims;
 
-namespace BlogPost.Controllers
-{
-    public class AddPostsController : Controller
+namespace BlogPost.Areas.User.Controllers
+{    
+    [Area("User")]
+    [Authorize(Roles = "User")]
+    public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public AddPostsController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -22,7 +23,8 @@ namespace BlogPost.Controllers
         // GET: AddPosts
         public async Task<IActionResult> Index()
         {
-              return View(await _context.addpost.ToListAsync());
+            var curUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return View(_context.addpost.Where(p => p.AuthorId == curUserId));
         }
 
         // GET: AddPosts/Details/5
@@ -148,14 +150,15 @@ namespace BlogPost.Controllers
             {
                 _context.addpost.Remove(addPost);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool AddPostExists(int id)
         {
-          return _context.addpost.Any(e => e.Id == id);
+            return _context.addpost.Any(e => e.Id == id);
         }
     }
 }
+
