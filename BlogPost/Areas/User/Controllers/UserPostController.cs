@@ -1,5 +1,6 @@
 ﻿using BlogPost.Data;
 using BlogPost.Models;
+using BlogPost.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +12,11 @@ namespace BlogPost.Areas.User.Controllers
 {    
     [Area("User")]
     [Authorize(Roles = "User")]
-    public class UserController : Controller
+    public class UserPostController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public UserController(ApplicationDbContext context)
+        public UserPostController(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -98,34 +99,14 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Text,CreatedDate")] Post posts)
+        public async Task<IActionResult> Edit(int id, [Bind("Title,Text")] PostCreateViewModel posts)
         {
-            if (id != posts.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(posts);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AddPostExists(posts.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                var curPost = await _context.posts.FirstAsync( p=> p.Id == id);
+                curPost.Text= posts.Text;
+                curPost.Title = posts.Title;
+            _context.SaveChanges();
                 return RedirectToAction(nameof(Index));
-            }
-            return View(posts);
+
         }
 
         // GET: AddPosts/Delete/5
