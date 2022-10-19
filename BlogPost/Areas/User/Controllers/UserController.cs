@@ -24,21 +24,20 @@ namespace BlogPost.Areas.User.Controllers
         public async Task<IActionResult> Index()
         {
             var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var UserPost = _context.addpost.OrderByDescending(p => p.CreatedDate).Take(8);
-            var UserPost_2 = UserPost.Where(p => p.AuthorId == curUserId);
-            return View(await UserPost_2.ToListAsync());
+            var UserPost = _context.posts.Where(p => p.AuthorId == curUserId);
+            
+            return View(await UserPost.ToListAsync());
         }
 
         // GET: AddPosts/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost
+            var addPost = await _context.posts
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (addPost == null)
             {
@@ -59,26 +58,34 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Text,CreatedDate")] AddPost addPost)
+        public async Task<IActionResult> Create([Bind("Id,Title,Text")] Post posts)
         {
+            Post curPost = new Post();
             if (ModelState.IsValid)
             {
-                _context.Add(addPost);
+                var curUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                curPost.Id = posts.Id;
+                curPost.AuthorId = curUserId;
+                curPost.Text = posts.Text;
+                curPost.Title= posts.Title;
+                curPost.CreatedDate=DateTime.Now;
+
+                _context.Add(posts);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(addPost);
+            return View(posts);
         }
 
         // GET: AddPosts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost.FindAsync(id);
+            var addPost = await _context.posts.FindAsync(id);
             if (addPost == null)
             {
                 return NotFound();
@@ -91,9 +98,9 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Text,CreatedDate")] AddPost addPost)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Text,CreatedDate")] Post posts)
         {
-            if (id != addPost.Id)
+            if (id != posts.Id)
             {
                 return NotFound();
             }
@@ -102,12 +109,12 @@ namespace BlogPost.Areas.User.Controllers
             {
                 try
                 {
-                    _context.Update(addPost);
+                    _context.Update(posts);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!AddPostExists(addPost.Id))
+                    if (!AddPostExists(posts.Id))
                     {
                         return NotFound();
                     }
@@ -118,18 +125,18 @@ namespace BlogPost.Areas.User.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(addPost);
+            return View(posts);
         }
 
         // GET: AddPosts/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost
+            var addPost = await _context.posts
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (addPost == null)
             {
@@ -144,14 +151,14 @@ namespace BlogPost.Areas.User.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.addpost == null)
+            if (_context.posts == null)
             {
                 return Problem("Entity set 'ApplicationDbContext.addpost'  is null.");
             }
-            var addPost = await _context.addpost.FindAsync(id);
+            var addPost = await _context.posts.FindAsync(id);
             if (addPost != null)
             {
-                _context.addpost.Remove(addPost);
+                _context.posts.Remove(addPost);
             }
 
             await _context.SaveChangesAsync();
@@ -160,7 +167,7 @@ namespace BlogPost.Areas.User.Controllers
 
         private bool AddPostExists(int id)
         {
-            return _context.addpost.Any(e => e.Id == id);
+            return _context.posts.Any(e => e.Id == id);
         }
     }
 }

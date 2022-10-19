@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BlogPost.Models
 {
-    public class AddPost
+    public class Post
     {
         public int Id { get; set; }
         public string Title { get; set; }

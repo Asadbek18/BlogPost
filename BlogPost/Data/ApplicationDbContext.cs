@@ -11,6 +11,6 @@ namespace BlogPost.Data
             : base(options)
         {
         }
-        public DbSet<AddPost> addpost { get; set; }
+        public DbSet<Post> posts { get; set; }
     }
 }
