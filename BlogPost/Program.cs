@@ -47,7 +47,7 @@ internal class Program
         app.MapAreaControllerRoute(
           name: "MyUsersArea",
           areaName: "User",
-          pattern: "User/{controller=Home}/{action=Index}/{id?}");
+          pattern: "User/{controller=UserPost}/{action=Index}/{id?}");
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");

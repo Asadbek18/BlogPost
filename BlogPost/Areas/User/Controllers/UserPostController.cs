@@ -4,6 +4,7 @@ using BlogPost.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Security.Claims;
@@ -51,6 +52,7 @@ namespace BlogPost.Areas.User.Controllers
         // GET: AddPosts/Create
         public IActionResult Create()
         {
+            ViewData["AuthorId"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
@@ -59,21 +61,22 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Text")] Post posts)
+        public async Task<IActionResult> Create(/*[Bind("Id,Title,Text")]*/ PostCreateViewModel posts)
         {
             Post curPost = new Post();
             if (ModelState.IsValid)
             {
                 var curUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                curPost.Id = posts.Id;
-                curPost.AuthorId = curUserId;
-                curPost.Text = posts.Text;
-                curPost.Title= posts.Title;
-                curPost.CreatedDate=DateTime.Now;
-
-                _context.Add(posts);
+                Post newPost = new()
+                {
+                    AuthorId = curUserId,
+                    Text = posts.Text,
+                    Title = posts.Title,
+                    CreatedDate= DateTime.Now
+                };
+                _context.posts.Add(newPost);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index");
             }
             return View(posts);
         }
@@ -99,14 +102,32 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Title,Text")] PostCreateViewModel posts)
+        public async Task<IActionResult> Edit(int id, [Bind("Title,Text,Id,CreatedDate,AuthorId")] PostCreateViewModel posts)
         {
-                var curPost = await _context.posts.FirstAsync( p=> p.Id == id);
-                curPost.Text= posts.Text;
-                curPost.Title = posts.Title;
-            _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
-
+                var curPost= await _context.posts.FindAsync(id);
+            if (id != curPost.Id)
+                return NotFound();
+            if(ModelState.IsValid)
+            {
+                try
+                {
+                    if (curPost == null)
+                        return NotFound();
+                    curPost.Title = posts.Title; 
+                    curPost.Text = posts.Text;  
+                    _context.Update(curPost);
+                    await _context.SaveChangesAsync();                    
+                }
+                catch
+                {
+                    if (!AddPostExists(curPost.Id))
+                        return NotFound();
+                    else
+                        throw;
+                }
+                return RedirectToAction("Index");
+            }
+            return View(curPost);
         }
 
         // GET: AddPosts/Delete/5
