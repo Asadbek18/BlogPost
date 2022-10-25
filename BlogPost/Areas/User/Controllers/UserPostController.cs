@@ -52,8 +52,7 @@ namespace BlogPost.Areas.User.Controllers
         // GET: AddPosts/Create
         public IActionResult Create()
         {
-            ViewData["AuthorId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
+             return View();
         }
 
         // POST: AddPosts/Create
@@ -62,8 +61,7 @@ namespace BlogPost.Areas.User.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(/*[Bind("Id,Title,Text")]*/ PostCreateViewModel posts)
-        {
-            Post curPost = new Post();
+        {            
             if (ModelState.IsValid)
             {
                 var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
