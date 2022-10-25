@@ -1,20 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using BlogPost.Data;
+using BlogPost.Models;
+using BlogPost.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using BlogPost.Data;
-using BlogPost.Models;
+using System.Data;
+using System.Security.Claims;
 
-namespace BlogPost.Controllers
-{
-    public class AddPostsController : Controller
+namespace BlogPost.Areas.User.Controllers
+{    
+    [Area("User")]
+    [Authorize(Roles = "User")]
+    public class UserPostController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public AddPostsController(ApplicationDbContext context)
+        public UserPostController(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -22,18 +25,21 @@ namespace BlogPost.Controllers
         // GET: AddPosts
         public async Task<IActionResult> Index()
         {
-              return View(await _context.addpost.ToListAsync());
+            var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var UserPost = _context.posts.Where(p => p.AuthorId == curUserId);
+            
+            return View(await UserPost.ToListAsync());
         }
 
         // GET: AddPosts/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost
+            var addPost = await _context.posts
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (addPost == null)
             {
@@ -46,6 +52,7 @@ namespace BlogPost.Controllers
         // GET: AddPosts/Create
         public IActionResult Create()
         {
+            ViewData["AuthorId"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
@@ -54,26 +61,35 @@ namespace BlogPost.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Text,CreatedDate")] AddPost addPost)
+        public async Task<IActionResult> Create(/*[Bind("Id,Title,Text")]*/ PostCreateViewModel posts)
         {
+            Post curPost = new Post();
             if (ModelState.IsValid)
             {
-                _context.Add(addPost);
+                var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Post newPost = new()
+                {
+                    Text = posts.Text,
+                    Title = posts.Title,
+                    CreatedDate= DateTime.Now,
+                    AuthorId = curUserId
+                };
+                _context.posts.Add(newPost);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index");
             }
-            return View(addPost);
+            return View(posts);
         }
 
         // GET: AddPosts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost.FindAsync(id);
+            var addPost = await _context.posts.FindAsync(id);
             if (addPost == null)
             {
                 return NotFound();
@@ -86,45 +102,43 @@ namespace BlogPost.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Text,CreatedDate")] AddPost addPost)
+        public async Task<IActionResult> Edit(int id, [Bind("Title,Text,Id,CreatedDate,AuthorId")] PostCreateViewModel posts)
         {
-            if (id != addPost.Id)
-            {
+                var curPost= await _context.posts.FindAsync(id);
+            if (id != curPost.Id)
                 return NotFound();
-            }
-
-            if (ModelState.IsValid)
+            if(ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(addPost);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AddPostExists(addPost.Id))
-                    {
+                    if (curPost == null)
                         return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    curPost.Title = posts.Title; 
+                    curPost.Text = posts.Text;  
+                    _context.Update(curPost);
+                    await _context.SaveChangesAsync();                    
                 }
-                return RedirectToAction(nameof(Index));
+                catch
+                {
+                    if (!AddPostExists(curPost.Id))
+                        return NotFound();
+                    else
+                        throw;
+                }
+                return RedirectToAction("Index");
             }
-            return View(addPost);
+            return View(curPost);
         }
 
         // GET: AddPosts/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.addpost == null)
+            if (id == null || _context.posts == null)
             {
                 return NotFound();
             }
 
-            var addPost = await _context.addpost
+            var addPost = await _context.posts
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (addPost == null)
             {
@@ -139,23 +153,24 @@ namespace BlogPost.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.addpost == null)
+            if (_context.posts == null)
             {
                 return Problem("Entity set 'ApplicationDbContext.addpost'  is null.");
             }
-            var addPost = await _context.addpost.FindAsync(id);
+            var addPost = await _context.posts.FindAsync(id);
             if (addPost != null)
             {
-                _context.addpost.Remove(addPost);
+                _context.posts.Remove(addPost);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool AddPostExists(int id)
         {
-          return _context.addpost.Any(e => e.Id == id);
+            return _context.posts.Any(e => e.Id == id);
         }
     }
 }
+
