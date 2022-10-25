@@ -66,13 +66,13 @@ namespace BlogPost.Areas.User.Controllers
             Post curPost = new Post();
             if (ModelState.IsValid)
             {
-                var curUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 Post newPost = new()
                 {
-                    AuthorId = curUserId,
                     Text = posts.Text,
                     Title = posts.Title,
-                    CreatedDate= DateTime.Now
+                    CreatedDate= DateTime.Now,
+                    AuthorId = curUserId
                 };
                 _context.posts.Add(newPost);
                 await _context.SaveChangesAsync();
