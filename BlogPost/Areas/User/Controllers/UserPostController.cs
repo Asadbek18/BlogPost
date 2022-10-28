@@ -26,9 +26,9 @@ namespace BlogPost.Areas.User.Controllers
         public async Task<IActionResult> Index()
         {
             var curUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var UserPost = _context.posts.Where(p => p.AuthorId == curUserId);
-            
-            return View(await UserPost.ToListAsync());
+            var UserPost = _context.posts.Where(p => p.Author.Id == curUserId).Include(x => x.Author);
+            var Posting=   UserPost.OrderByDescending(p => p.CreatedDate).ToListAsync();
+            return View(await Posting);
         }
 
         // GET: AddPosts/Details/5
@@ -60,7 +60,7 @@ namespace BlogPost.Areas.User.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(/*[Bind("Id,Title,Text")]*/ PostCreateViewModel posts)
+        public async Task<IActionResult> Create([Bind("Title,Text")] PostCreateViewModel posts)
         {            
             if (ModelState.IsValid)
             {

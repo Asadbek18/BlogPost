@@ -10,6 +10,6 @@ namespace BlogPost.Areas.Identity.Data;
 // Add profile data for application users by adding properties to the BlogPostUser class
 public class BlogPostUser : IdentityUser
 {    
-    List<Post>? posts { get; set; }
+    
 }
 
